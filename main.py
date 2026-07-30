@@ -68,7 +68,7 @@ df_raw["청소년인구"] = df_raw[youth_cols].sum(axis=1)
 # 3. 사이드바 컨트롤러
 st.sidebar.header("⚙️ 지도 및 지표 설정")
 
-# 지표 선택 (청소년 비율 추가)
+# 지표 선택
 indicator = st.sidebar.selectbox(
     "📊 분석할 지표를 선택하세요",
     ["청소년 비율 (9~24세)", "유소년 비율 (0~14세)", "고령화율 (65세 이상 비율)"]
@@ -204,12 +204,19 @@ selected_sigungu = st.selectbox("📍 상세 분석할 시·군·구를 선택�
 sigungu_code_target = valid_merged[valid_merged["시군구"] == selected_sigungu]["시군구코드"].iloc[0]
 df_dong = df_year[df_year["시군구코드"] == sigungu_code_target].copy()
 
-if "읍면동" in df_dong.columns:
-    dong_col = "읍면동"
-elif "행정동" in df_dong.columns:
-    dong_col = "행정동"
-else:
-    dong_col = "구분"
+# [수정된 핵심 부분] 실제 존재하는 행정동 컬럼을 찾아서 지정
+possible_dong_cols = ["읍면동명", "행정동명", "읍면동", "행정동", "구분", "동명", "지역"]
+dong_col = None
+
+for col in possible_dong_cols:
+    if col in df_dong.columns:
+        dong_col = col
+        break
+
+# 만약 위 이름들 중에 없으면, 숫자 인구 컬럼이나 코드가 아닌 첫 번째 문자열 컬럼을 찾습니다.
+if dong_col is None:
+    text_cols = [c for c in df_dong.select_dtypes(include=['object', 'string']).columns if c not in ['코드', '코드_보정', '시군구코드', '시도', '연도']]
+    dong_col = text_cols[0] if text_cols else "코드"
 
 # 읍면동별 비율 재계산
 dong_grouped = df_dong.groupby(dong_col)[["전체인구", "고령인구", "유소년인구", "청소년인구"]].sum().reset_index()
