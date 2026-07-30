@@ -3,8 +3,8 @@ import streamlit as st
 # 1. 페이지 기본 설정 (감성적인 제목 및 아이콘)
 st.set_page_config(
     page_title="Lofi & Vibe MBTI Jukebox",
-    page_page_icon="🎧",
-    layout="centered"
+    page_icon="🎧",  # ✅ page_icon으로 수정
+    layout="centered",
 )
 
 # 2. 커스텀 CSS로 '느좋' (느낌 좋은) Lofi/빈티지 감성 연출
