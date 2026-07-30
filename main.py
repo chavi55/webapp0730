@@ -19,7 +19,12 @@ def load_population_data():
     url = "https://raw.githubusercontent.com/greatsong/modudata/main/data/population_yearly.csv.gz"
     
     # '코드' 열은 문자열(10자리)로 읽어오기
-    df = pd.read_csv(url, dtype={'코드': str})
+    try:
+        df = pd.read_csv(url, dtype={'코드': str})
+    except Exception as e:
+        st.error(f"CSV 로딩 실패: {e}")
+        st.stop()
+        
     df['코드'] = df['코드'].str.zfill(10)
     
     # 행정동 코드 앞 2자리를 잘라 시도코드 생성 (예: '11' = 서울특별시)
@@ -44,7 +49,9 @@ def load_population_data():
     df_grouped['중학생비율'] = (df_grouped['중학생인구'] / df_grouped['전체인구'].replace(0, pd.NA)) * 100
     df_grouped['중학생비율'] = df_grouped['중학생비율'].fillna(0).round(2)
     
-    # 지정된 5단계 구간 나누기 (시·도 단위 분포에 대응)
+    # [수정] 데이터 분포에 맞춰 그라데이션이 끊기도록 5단계 덩어리로 나눈 실제 구간값 설정
+    # 구간 경계값 예시: 19% · 23% · 28% · 38%
+    # labels를 사용해 이산형(Discrete) 색상 매핑 준비
     bins = [-1, 19, 23, 28, 38, 100]
     labels = ['19% 미만', '19% 이상 ~ 23% 미만', '23% 이상 ~ 28% 미만', '28% 이상 ~ 38% 미만', '38% 이상']
     
@@ -57,17 +64,18 @@ def load_sido_geojson():
     """시·도 GeoJSON 경계 데이터 로드"""
     # 대한민국 시도 경계 GeoJSON URL
     url = "https://raw.githubusercontent.com/southkorea/southkorea-maps/master/kostat/2013/json/skorea_provinces_geo.json"
-    res = requests.get(url)
-    return res.json()
+    try:
+        res = requests.get(url)
+        geojson = res.json()
+    except Exception as e:
+        st.error(f"GeoJSON 로딩 실패: {e}")
+        st.stop()
+    return geojson
 
 # 데이터 로딩
-try:
-    with st.spinner("데이터를 불러오는 중입니다..."):
-        df_all = load_population_data()
-        geojson_data = load_sido_geojson()
-except Exception as e:
-    st.error(f"데이터를 불러오는 중 오류가 발생했습니다: {e}")
-    st.stop()
+with st.spinner("데이터를 불러오는 중입니다..."):
+    df_all = load_population_data()
+    geojson_data = load_sido_geojson()
 
 # 3. 사이드바 - 연도 선택 슬라이더
 min_year = int(df_all['연도'].min())
@@ -87,9 +95,10 @@ st.sidebar.info(f"📅 **선택된 연도:** {selected_year}년")
 # 선택한 연도 데이터만 필터링
 df_pop = df_all[df_all['연도'] == selected_year].copy()
 
-# 4. 지도 시각화 설정 (Plotly Choropleth Mapbox)
+# 4. 지도 시각화 설정 (Plotly Choropleth Mapbox) - 내부 채우기 방식
 
-# 5단계 색상 맵 설정
+# [수정] 요구사항: 5단계 끊어지는 그라데이션 색상 맵 설정 (연한 색 -> 진한 색)
+# 낮은 비율구간은 옅게, 높은 비율구간은 진하게.
 color_discrete_map = {
     '19% 미만': '#f7fbff',
     '19% 이상 ~ 23% 미만': '#c6dbef',
@@ -98,21 +107,24 @@ color_discrete_map = {
     '38% 이상': '#08519c'
 }
 
+# 범례 순서 강제
 category_orders = {
     '비율구간': ['19% 미만', '19% 이상 ~ 23% 미만', '23% 이상 ~ 28% 미만', '28% 이상 ~ 38% 미만', '38% 이상']
 }
 
 animation_frame = '월' if '월' in df_pop.columns else None
 
-# 시도 경계 지도 생성
+# 시도 경계 지도 생성 (Choropleth Mapbox)
 fig = px.choropleth_mapbox(
     df_pop,
     geojson=geojson_data,
     locations='시도코드',
     featureidkey='properties.code',  # 시도 GeoJSON의 2자리 코드 속성 매칭
-    color='비율구간',
+    # [수정] color에 '비율구간' 매핑 및 discrete color map 적용 -> 지도 내부 채우기
+    color='비율구간', 
     color_discrete_map=color_discrete_map,
     category_orders=category_orders,
+    
     animation_frame=animation_frame,
     hover_name='시도',
     hover_data={
@@ -131,6 +143,7 @@ fig = px.choropleth_mapbox(
 # 호버 서식 및 레이아웃 설정
 fig.update_layout(
     margin={"r": 0, "t": 30, "l": 0, "b": 0},
+    # 호버 툴팁 박스 스타일
     hoverlabel=dict(
         bgcolor="#f0f4ff",            # 은은한 파란색 배경
         bordercolor="#0055ff",        # 네모 박스 테두리 파란색
@@ -139,6 +152,7 @@ fig.update_layout(
         font_family="Malgun Gothic, Apple SD Gothic Neo, sans-serif"
     ),
     hovermode="closest",
+    # [수정] 범례 제목 한글화 및 위치/배경 설정
     legend_title_text='중학생 인구 비율 구간',
     legend=dict(
         yanchor="top",
@@ -151,10 +165,18 @@ fig.update_layout(
     )
 )
 
-# 마우스 올렸을 때(호버) 파란색 테두리 강조 및 안내 박스 생성
+# [수정] 지도 경계선 및 호버 강조 효과 설정
 fig.update_traces(
-    marker_line_width=2,
-    marker_line_color="#0055ff",  # 호버 강조용 파란색 라인
+    # 기본 경계선 색상은 연한 회색으로 고정하여 내부 채우기가 돋보이게 함
+    marker_line_width=1,
+    marker_line_color="#7f7f7f",  # 연한 회색 경계선
+
+    # 마우스 올렸을 때(호버) 영역 내부를 짙게 채우고 테두리 파란색 강조
+    highlight_marker_line_width=2.5,
+    highlight_marker_line_color="#0055ff",  # 호버 강조용 진한 파란색 테두리
+    #highlight_marker_fillcolor="#ffffff", # 호버 시 내부 채우기 색상을 변경하고 싶다면 주석 해제
+
+    # 호버 툴팁 포맷 (한글 라벨 적용)
     hovertemplate=(
         "<b>📍 %{hovertext} (시·도코드: %{location})</b><br>"
         "------------------------------<br>"
