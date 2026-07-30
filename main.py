@@ -27,7 +27,6 @@ def load_population_data():
     df['코드'] = df['코드'].str.zfill(10)
     
     # [행정구역 개편 코드 보정]
-    # 10자리 코드 및 5자리/2자리 코드 변환용 사전 처리
     df['코드_보정'] = df['코드']
     
     # 1. 대구 군위군 (47720 -> 27720)
@@ -91,7 +90,6 @@ with st.spinner("데이터 및 경계 정보를 로딩하는 중입니다..."):
     df_all = load_population_data()
     geojson_data = load_sido_geojson()
 
-# GeoJSON에 존재하는 시도코드 리스트 추출 (미매칭 확인용)
 geojson_codes = {feat['properties']['code'] for feat in geojson_data['features']}
 
 # 3. 사이드바 컨트롤러 (지표 선택, 연도 슬라이더, 시도 선택)
@@ -122,21 +120,18 @@ selected_sido = st.sidebar.selectbox("📍 지역(시·도) 선택", sido_list)
 if indicator_option == "중학생 비율 (14~16세)":
     val_col = '중학생 비율'
     pop_col = '중학생인구'
-    # 요구사항: 19% · 23% · 28% · 38% 고정 구간
     bins = [-1, 19, 23, 28, 38, 100]
     labels = ['19% 미만', '19% 이상 ~ 23% 미만', '23% 이상 ~ 28% 미만', '28% 이상 ~ 38% 미만', '38% 이상']
 
 elif indicator_option == "유소년 비율 (0~14세)":
     val_col = '유소년 비율'
     pop_col = '유소년인구'
-    # 유소년 비율 분포 맞춤 구간
     bins = [-1, 8, 10, 12, 14, 100]
     labels = ['8% 미만', '8% 이상 ~ 10% 미만', '10% 이상 ~ 12% 미만', '12% 이상 ~ 14% 미만', '14% 이상']
 
 else:  # 고령화율 (65세 이상)
     val_col = '고령화율'
     pop_col = '고령인구'
-    # 고령화율 분포 맞춤 구간
     bins = [-1, 14, 20, 25, 30, 100]
     labels = ['14% 미만(초기)', '14% 이상 ~ 20% 미만', '20% 이상 ~ 25% 미만', '25% 이상 ~ 30% 미만', '30% 이상']
 
@@ -152,7 +147,7 @@ color_discrete_map = {
 df_year = df_all[df_all['연도'] == selected_year].copy()
 df_year['비율구간'] = pd.cut(df_year[val_col], bins=bins, labels=labels)
 
-# 애니메이션을 위한 최근 월 기준 데이터 추출
+# 최근 월 데이터 추출
 animation_frame = '월' if '월' in df_year.columns else None
 if animation_frame:
     latest_month = df_year['월'].max()
@@ -160,7 +155,7 @@ if animation_frame:
 else:
     df_current = df_year.copy()
 
-# 5. 지도 위에 표시할 요약 지표 카드 (st.metric 3종)
+# 5. 지도 위에 표시할 요약 지표 카드
 st.subheader(f"📌 {selected_year}년 {indicator_option} 요약 지표")
 
 nat_total = df_current['전체인구'].sum()
@@ -204,7 +199,7 @@ center_dict = {
 
 view = center_dict.get(selected_sido, center_dict["전국"])
 
-# 7. 지도 시각화
+# 7. 지도 시각화 (모든 외곽선을 선명하게 그리고 내부에 색 채우기)
 fig = px.choropleth_mapbox(
     df_year,
     geojson=geojson_data,
@@ -225,7 +220,7 @@ fig = px.choropleth_mapbox(
     mapbox_style="white-bg",
     center={"lat": view["lat"], "lon": view["lon"]},
     zoom=view["zoom"],
-    opacity=0.85
+    opacity=0.9
 )
 
 fig.update_layout(
@@ -250,9 +245,10 @@ fig.update_layout(
     )
 )
 
+# [수정] 모든 외곽선을 또렷한 어두운 색상선(#222222)으로 그리고, 그 내부에 비율별 색상 채우기
 fig.update_traces(
-    marker_line_width=1.2,
-    marker_line_color="#444444",
+    marker_line_width=1.5,      # 외곽선 두께
+    marker_line_color="#222222",  # 또렷한 진한 외곽선 색상
     hovertemplate=(
         "<b>📍 %{hovertext} (코드: %{location})</b><br>"
         "------------------------------<br>"
@@ -265,7 +261,7 @@ fig.update_traces(
 
 st.plotly_chart(fig, use_container_width=True)
 
-# 경계 미매칭 지역 안내 문구 출력
+# 경계 미매칭 지역 안내 문구
 unmatched = set(df_year['시도코드'].unique()) - geojson_codes
 if unmatched:
     st.caption("ℹ️ **안내:** 행정구역 개편으로 경계 파일과 일치하지 않는 일부 매칭 불가 지역은 회색으로 표시됩니다.")
