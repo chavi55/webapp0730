@@ -1,187 +1,181 @@
 import streamlit as st
 
-# 1. 페이지 기본 설정 (감성적인 제목 및 아이콘)
+# 1. 페이지 설정
 st.set_page_config(
-    page_title="Lofi & Vibe MBTI Jukebox",
-    page_icon="🎧",  # ✅ page_icon으로 수정
-    layout="centered",
+    page_title="MBTI 3D Room Studio",
+    page_icon="🏠",
+    layout="centered"
 )
 
-# 2. 커스텀 CSS로 '느좋' (느낌 좋은) Lofi/빈티지 감성 연출
+# 2. 감성적인 Dark / Pastel 3D 다이오라마 스타일 CSS
 st.markdown("""
     <style>
-    /* 배경 및 기본 폰트 감성 설정 */
     .stApp {
-        background-color: #181623;
-        color: #E2E1E7;
+        background-color: #12131C;
+        color: #F1F0F5;
     }
-    /* 카드 느낌의 컨테이너 스타일 */
-    .vibe-card {
-        background-color: #232035;
-        border-radius: 16px;
+    .room-card {
+        background-color: #1E1F2E;
+        border-radius: 20px;
         padding: 24px;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-        border: 1px solid #342F4C;
-        margin-top: 10px;
-        margin-bottom: 20px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        border: 1px solid #2D2F45;
+        margin-top: 15px;
+        margin-bottom: 25px;
     }
-    /* 서브텍스트 강조 */
-    .highlight-text {
-        color: #C084FC;
+    .mbti-badge {
+        background-color: #8B5CF6;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 0.85rem;
         font-weight: 600;
+        display: inline-block;
+        margin-bottom: 8px;
+    }
+    .room-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #FFFFFF;
+    }
+    .room-desc {
+        color: #A0A3BD;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-top: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. MBTI별 Lofi 트랙 및 분위기 데이터
-MBTI_VIBES = {
+# 3. MBTI별 3D 방 이미지 및 테마 설명 데이터
+ROOM_DATA = {
     "INFP": {
-        "title": "비 오는 날, 창가에 앉아 드로잉하기",
-        "artist": "Lofi Rain & Piano Dreams",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-        "vibe_desc": "깊은 상상 속으로 빠져드는 잔잔한 피아노 선율과 빗소리 레이어.",
-        "quote": "공상 속에 잠겨도 괜찮아요. 그곳이 당신의 가장 편안한 은신처니까요."
+        "title": "꿈꾸는 식물학자의 다락방",
+        "image": "https://images.unsplash.com/photo-1513694203232-719a280e022f?w=800&q=80",
+        "desc": "따스한 햇살이 드는 창가, 빈티지 서적과 푸릇푸릇한 식물들이 가득한 조용한 비밀 공간입니다.",
+        "concept": "🌱 파스텔 그린 & 몽환적인 코지 룸"
     },
     "INFJ": {
-        "title": "새벽 2시, 서재의 작은 스탠드 조명",
-        "artist": "Midnight Study Session",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-        "vibe_desc": "차분하고 정돈된 비트 위로 흐르는 고요한 재즈 기타 리프.",
-        "quote": "복잡한 생각은 잠시 내려두고, 밤이 주는 침묵을 온전히 누려보세요."
+        "title": "심야의 고요한 서재",
+        "image": "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800&q=80",
+        "desc": "벽면을 채운 책장과 작은 차 테이블. 나만의 단단한 생각을 가다듬을 수 있는 따뜻한 램프 조명 스튜디오.",
+        "concept": "📖 웜 우드 & 정돈된 서재"
     },
     "INTP": {
-        "title": "끝없는 코드 스크롤과 미지근한 커피",
-        "artist": "Cyber Chill & Glitch Lofi",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-        "vibe_desc": "아날로그 신디사이저와 일정한 템포의 신비로운 칠홉 비트.",
-        "quote": "당신의 호기심이 가장 차분하게 피어나는 시간입니다."
+        "title": "미래지향 멀티 모니터 연구실",
+        "image": "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&q=80",
+        "desc": "복잡한 회로보드, 네온 조명과 여러 대의 화면. 오롯이 나만의 지적 탐구에 몰입하는 미니멀 공간.",
+        "concept": "👾 사이버 칠 & 디스플레이 데스크"
     },
     "INTJ": {
-        "title": "체스판 위의 조용한 계획",
-        "artist": "Minimalist Focus Beats",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
-        "vibe_desc": "절제된 드럼 앤 베이스 기반의 몰입감을 높여주는 로파이 사운드.",
-        "quote": "목표를 향해 한 걸음씩, 조용하지만 확실하게 완벽해지는 공간."
+        "title": "체스판 같은 완벽한 데스크 룸",
+        "image": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80",
+        "desc": "군더더기 없는 미니멀리즘 가구와 짙은 스모키 톤의 인테리어. 전략과 집중을 위한 완벽한 구도.",
+        "concept": "📐 모노톤 미니멀 스튜디오"
     },
     "ENFP": {
-        "title": "노을 지는 한강변에서의 스케이트보드",
-        "artist": "Sunset Pop Lofi",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
-        "vibe_desc": "따뜻하고 몽환적인 싱어송라이터 느낌의 팝 비트.",
-        "quote": "당신이 반짝이는 아이디어를 떠올릴 때 세상은 한 층 더 칠해집니다."
+        "title": "알록달록 아이디어 아트 룸",
+        "image": "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&q=80",
+        "desc": "영감이 솟아구치는 파스텔톤 소품과 귀여운 피규어, 벽면에 붙은 가득한 포스트잇 스페이스.",
+        "concept": "🎨 파스텔 팝 & 크리에이티브 공간"
     },
     "ENTP": {
-        "title": "새벽 트위치 방송 라이브와 디스코드",
-        "artist": "Neon Groove & Chill Vibe",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
-        "vibe_desc": "톡톡 튀는 샘플링과 리드미컬한 바이브가 매력적인 로파이 펑크.",
-        "quote": "재미있는 상상이 끝없이 이어져도 좋아요. 지금은 자유로운 시간이니까."
+        "title": "자유로운 얼리어답터의 아지트",
+        "image": "https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&q=80",
+        "desc": "다양한 가젯과 피규어, 톡톡 튀는 오브제들이 조화를 이루는 창의적이고 감각적인 아지트.",
+        "concept": "⚡ 레트로 펑크 & 테크 데스크"
     },
     "ENFJ": {
-        "title": "모두가 떠난 뒤 따스한 조명이 남은 카페",
-        "artist": "Warm Coffee & Friendly Guitar",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
-        "vibe_desc": "포근한 어쿠스틱 기타와 마음을 감싸주는 로파이 바이닐 텍스처.",
-        "quote": "타인을 밝히느라 애쓴 당신에게 오늘은 따스한 휴식이 필요해요."
+        "title": "손님을 맞이하는 따스한 티룸",
+        "image": "https://images.unsplash.com/photo-1540518614846-7ede433c5172?w=800&q=80",
+        "desc": "부드러운 쇼파와 다정한 쿠션, 언제든 누군가를 초대해 진솔한 대화를 나누고 싶은 온기 있는 방.",
+        "concept": "☕ 샌드 베이지 & 코튼 라이트"
     },
     "ENTJ": {
-        "title": "도심이 내려다보이는 야경과 루프탑",
-        "artist": "Night City Skyline Beats",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
-        "vibe_desc": "세련되고 묵직한 묵직한 베이스 라인의 심야형 칠홉.",
-        "quote": "잠시 성장의 주행을 멈추고, 오늘 이룬 성취를 음미해보세요."
+        "title": "도심 야경이 보이는 모던 팬트하우스",
+        "image": "https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?w=800&q=80",
+        "desc": "탁 트인 통창 너머의 야경과 세련된 가죽 스튜디오 체어. 목표를 설계하는 현대적인 공간.",
+        "concept": "🏙️ 미드센추리 모던 & 라운지"
     },
     "ISFP": {
-        "title": "연보랏빛 하늘과 바이닐 레코드 플레이어",
-        "artist": "Cozy Bedroom Bedroom-pop",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
-        "vibe_desc": "특유의 로파이 노이즈 질감과 스포티파이 감성 필터 오디오.",
-        "quote": "말하지 않아도 전해지는 음악의 온도가 당신을 감싸줄 거예요."
+        "title": "아늑한 캔버스 아틀리에",
+        "image": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?w=800&q=80",
+        "desc": "부드러운 패브릭 소재, 바이닐 스피커, 햇살이 부서져 내리는 오감을 자극하는 감성 화실.",
+        "concept": "🛋️ 오프화이트 & 바이닐 아지트"
     },
     "ISFJ": {
-        "title": "퐁퐁 올라오는 차 김과 폭신한 수면바지",
-        "artist": "Soft Herbal Tea Beats",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3",
-        "vibe_desc": "부드러운 오르골 느낌의 EP 소리와 잔잔한 소품집 어쿠스틱.",
-        "quote": "당신의 다정함 덕분에 오늘 하루도 누구가는 따뜻했습니다."
+        "title": "폭신한 니트 쿠션이 있는 침실",
+        "image": "https://images.unsplash.com/photo-1598928506311-c55ded91a20c?w=800&q=80",
+        "desc": "정돈된 침구와 무드등, 마음을 편안하게 해주는 은은한 은신처 같은 포근한 3D 침실.",
+        "concept": "🧸 포근한 크림 & 베이지 라이트"
     },
     "ISTP": {
-        "title": "심야 드라이브, 한적한 국도와 보라색 조명",
-        "artist": "Night Drive Wave",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-11.mp3",
-        "vibe_desc": "감각적이고 서늘한 텍스처의 로파이 신스웨이브.",
-        "quote": "아무런 목적지 없이 흘러가는 길 위에서 찾는 자유로움."
+        "title": "디테일한 DIY 게이밍 게라지",
+        "image": "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&q=80",
+        "desc": "기계 공구와 정교한 도구들, 고성능 게이밍 세팅이 하나로 어우러진 손재주꾼의 방.",
+        "concept": "🛠️ 메탈릭 다크 & 스포트라이트"
     },
     "ISTJ": {
-        "title": "깨끗하게 정리된 책상과 따뜻한 우드 향",
-        "artist": "Clean Mechanical Keyboard Lofi",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-12.mp3",
-        "vibe_desc": "아주 일정한 템포와 정갈한 재즈 3중주 기반의 비트.",
-        "quote": "약속된 평온함 속에서 가장 완전한 휴식을 찾아냅니다."
+        "title": "단정함의 정석, 타임리스 스터디",
+        "image": "https://images.unsplash.com/photo-1518455027359-f3f8164ba6bd?w=800&q=80",
+        "desc": "모든 물건이 제자리에 정리된 칼같은 정돈감. 클래식한 우드 톤의 차분하고 신뢰감 있는 방.",
+        "concept": "📐 디테일 우드 & 오거나이즈"
     },
     "ESFP": {
-        "title": "햇살이 쏟아지는 주말 브런치 테라스",
-        "artist": "Sunny Afternoon Bossa Lofi",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-13.mp3",
-        "vibe_desc": "경쾌한 보사노바 리듬에 로파이 감성이 더해진 트랙.",
-        "quote": "오늘이라는 매 순간을 가장 아름답게 즐길 줄 아는 당신에게."
+        "title": "트로피컬 선셋 비치하우스",
+        "image": "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80",
+        "desc": "해질녘 분홍빛 노을이 물드는 테라스와 통통 튀는 인테리어 소품이 매력적인 파티 룸.",
+        "concept": "🌊 코랄 핑크 & 트로피컬 3D"
     },
     "ESFJ": {
-        "title": "친구들과 함께 찍은 필름 카메라 사진첩",
-        "artist": "Memories & Warm Polaroids",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-14.mp3",
-        "vibe_desc": "추억을 떠올리게 만드는 클래식한 멜로디의 칠아웃 음악.",
-        "quote": "소중한 사람들과 함께 만든 소소한 기적들을 기억해요."
+        "title": "행복한 홈파티 아일랜드",
+        "image": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=800&q=80",
+        "desc": "소중한 사람들과 맛있는 음식을 나눌 수 있는 따뜻하고 왁자지껄한 다이닝 스페이스.",
+        "concept": "🍞 옐로우 웜 & 키친 베이커리"
     },
     "ESTP": {
-        "title": "해질녘 해변의 버스킹과 파도 소리",
-        "artist": "Beach Sunset Chillstep",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-15.mp3",
-        "vibe_desc": "시원한 시티팝과 힙합 비트가 섞인 감각적인 Lofi 트랙.",
-        "quote": "바람을 가르는 지금 이 순간, 가장 선명하게 살아있음을 느껴요."
+        "title": "액티비티 스포츠 기어 룸",
+        "image": "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&q=80",
+        "desc": "스케이트보드와 운동 기구, 스피디한 감각이 돋보이는 에너제틱 3D 스튜디오.",
+        "concept": "🛹 다이나믹 블록 & 스트릿"
     },
     "ESTJ": {
-        "title": "일과를 완벽히 마친 뒤 마시는 시원한 음료",
-        "artist": "Accomplished Evening Chill",
-        "audio": "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-16.mp3",
-        "vibe_desc": "안정감 있고 세련된 일렉트릭 피아노 선율의 칠홉.",
-        "quote": "수고 많았던 하루, 이제 마음의 짐을 완전히 내려놓을 시간입니다."
+        "title": "스마트 프라이빗 오피스",
+        "image": "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&q=80",
+        "desc": "효율적인 동선과 체계적인 스케줄러가 돋보이는 완벽한 생산성 중심의 세련된 방.",
+        "concept": "💼 딥 블루 & 오피스 스튜디오"
     }
 }
 
-# 4. 앱 헤더 화면
-st.title("🎧 Lofi & Vibe MBTI Jukebox")
-st.caption("당신의 MBTI에 딱 맞는 '느좋' 로파이 분위기와 음악을 찾아드려요.")
+# 4. 앱 헤더
+st.title("🏠 MBTI 3D Cozy Room Studio")
+st.caption("16가지 MBTI 성향에 딱 맞는 3D 분위기의 아기자기한 방을 찾아드려요.")
 
 st.divider()
 
-# 5. MBTI 선택 셀렉트박스
-mbti_list = list(MBTI_VIBES.keys())
+# 5. MBTI 선택
 selected_mbti = st.selectbox(
     "✨ 당신의 MBTI를 선택해 주세요",
-    mbti_list,
-    index=0,
-    help="16가지 MBTI 중 하나를 선택하면 맞춤 Lofi 트랙이 재생됩니다."
+    list(ROOM_DATA.keys()),
+    index=0
 )
 
-# 6. 선택한 MBTI 분위기 카드 연출
-vibe_data = MBTI_VIBES[selected_mbti]
+# 6. 선택된 방 정보
+room = ROOM_DATA[selected_mbti]
 
+# 방 카드 UI
 st.markdown(f"""
-<div class="vibe-card">
-    <span class="highlight-text">[{selected_mbti} 맞춤 바이브]</span>
-    <h2 style="margin-top: 8px; margin-bottom: 8px;">{vibe_data['title']}</h2>
-    <p style="color: #A09CB0; margin-bottom: 4px;">🎵 <b>Recommended Track:</b> {vibe_data['artist']}</p>
-    <p style="font-size: 0.95rem; line-height: 1.5;">{vibe_data['vibe_desc']}</p>
+<div class="room-card">
+    <span class="mbti-badge">{selected_mbti} Style</span>
+    <div class="room-title">{room['title']}</div>
+    <div style="color: #C084FC; font-weight: 500; font-size: 0.9rem;">{room['concept']}</div>
+    <p class="room-desc">{room['desc']}</p>
 </div>
 """, unsafe_allow_html=True)
 
-# 7. 오디오 플레이어 (Streamlit 기본 지원)
-st.audio(vibe_data["audio"], format="audio/mp3")
+# 7. 아기자기한 3D 방 이미지 출력
+st.image(room["image"], use_column_width=True, caption=f"3D Visual for {selected_mbti}")
 
-# 8. 감성 문구 인용구 표출
-st.info(f"💡 *\"{vibe_data['quote']}\"*")
-
-# 9. 푸터 (하단 안내)
 st.divider()
-st.caption("☕ 이어폰을 끼고 편안하게 감상해 보세요. Streamlit Cloud 배포 완료!")
+st.caption("💡 팁: 원하는 이미지를 우클릭하여 저장하거나 배경화면으로 활용해 보세요!")
